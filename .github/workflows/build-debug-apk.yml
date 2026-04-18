@@ -21,24 +21,16 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # This repo only had gradle-wrapper.properties; GitHub runners don't ship `gradle` on PATH.
-      # Bootstrap the full wrapper (gradlew + jar) using a one-off Gradle distribution download.
-      - name: Bootstrap Gradle wrapper
+      # AGP configures the :app module during *any* Gradle invocation (even `gradle wrapper`).
+      # Install the Android SDK *before* running Gradle against this repo.
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install compile SDK + build tools
         shell: bash
         run: |
           set -euo pipefail
-          GRADLE_VERSION=8.9
-          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "/tmp/gradle.zip"
-          unzip -qo "/tmp/gradle.zip" -d "/tmp"
-          "/tmp/gradle-${GRADLE_VERSION}/bin/gradle" wrapper \
-            --gradle-version "${GRADLE_VERSION}" \
-            --distribution-type bin
-          chmod +x gradlew
-
-      - name: Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: "tools platform-tools platforms;android-34 build-tools;34.0.0"
+          yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" >/dev/null
 
       - name: Point Gradle at the Android SDK
         shell: bash
@@ -50,6 +42,19 @@ jobs:
             exit 1
           fi
           echo "sdk.dir=${SDK}" > local.properties
+
+      # This repo only had gradle-wrapper.properties; bootstrap full wrapper (gradlew + jar).
+      - name: Bootstrap Gradle wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          GRADLE_VERSION=8.9
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "/tmp/gradle.zip"
+          unzip -qo "/tmp/gradle.zip" -d "/tmp"
+          "/tmp/gradle-${GRADLE_VERSION}/bin/gradle" wrapper \
+            --gradle-version "${GRADLE_VERSION}" \
+            --distribution-type bin
+          chmod +x gradlew
 
       - name: Setup Gradle (cache)
         uses: gradle/actions/setup-gradle@v4
