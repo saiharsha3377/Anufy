@@ -5,6 +5,9 @@ on:
   push:
     branches: ["main", "master"]
 
+permissions:
+  contents: read
+
 jobs:
   debug_apk:
     runs-on: ubuntu-latest
@@ -18,28 +21,41 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      # This repo only had gradle-wrapper.properties; GitHub runners don't ship `gradle` on PATH.
+      # Bootstrap the full wrapper (gradlew + jar) using a one-off Gradle distribution download.
+      - name: Bootstrap Gradle wrapper
+        shell: bash
+        run: |
+          set -euo pipefail
+          GRADLE_VERSION=8.9
+          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "/tmp/gradle.zip"
+          unzip -qo "/tmp/gradle.zip" -d "/tmp"
+          "/tmp/gradle-${GRADLE_VERSION}/bin/gradle" wrapper \
+            --gradle-version "${GRADLE_VERSION}" \
+            --distribution-type bin
+          chmod +x gradlew
+
       - name: Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Accept SDK licenses (if prompted)
-        run: yes | sdkmanager --licenses >/dev/null 2>&1 || true
-
-      - name: Install compile SDK + build tools
-        run: |
-          yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" >/dev/null
+        with:
+          packages: "tools platform-tools platforms;android-34 build-tools;34.0.0"
 
       - name: Point Gradle at the Android SDK
+        shell: bash
         run: |
-          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          set -euo pipefail
+          SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [[ -z "${SDK}" ]]; then
+            echo "ANDROID_SDK_ROOT / ANDROID_HOME is empty" >&2
+            exit 1
+          fi
           echo "sdk.dir=${SDK}" > local.properties
 
-      - name: Setup Gradle
+      - name: Setup Gradle (cache)
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.9"
 
       - name: Assemble debug APK
-        run: gradle :app:assembleDebug --stacktrace --no-daemon
+        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
