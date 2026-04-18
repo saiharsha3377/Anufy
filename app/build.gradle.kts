@@ -50,7 +50,8 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
+    // BOM 2024.06+ lines up with Kotlin 2 / newer compiler; stay on 2024.02 for Kotlin 1.9.24 + compiler 1.5.14.
+    val composeBom = platform("androidx.compose:compose-bom:2024.02.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
