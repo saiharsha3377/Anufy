@@ -1,9 +1,11 @@
 name: Build debug APK
 
+# Runs on any branch push (not only main/master), PRs, and manual "Run workflow".
+# If nothing shows under Actions → Workflows, enable Actions in repo Settings → Actions → General.
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "master"]
+  pull_request:
 
 permissions:
   contents: read
