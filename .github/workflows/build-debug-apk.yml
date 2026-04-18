@@ -43,6 +43,20 @@ jobs:
           chmod +x ./gradlew
           ./gradlew :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee assemble.log
 
+      - name: Expose first Gradle error (for API annotations)
+        if: failure()
+        shell: bash
+        run: |
+          set +e
+          {
+            echo "## First Gradle errors"
+            (grep -nE "What went wrong:|FAILURE:|> Task .*FAILED|e: file://" assemble.log || true) | head -n 40
+          } >> "$GITHUB_STEP_SUMMARY"
+          LINE="$(grep -m1 -E "What went wrong:|FAILURE:|> Task :app:.*FAILED|e: file://" assemble.log || true)"
+          if [[ -n "${LINE}" ]]; then
+            echo "::error title=Gradle::${LINE:0:900}"
+          fi
+
       - name: Upload CI diagnostics (always)
         if: always()
         uses: actions/upload-artifact@v4
