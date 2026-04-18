@@ -21,8 +21,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # AGP configures the :app module during *any* Gradle invocation (even `gradle wrapper`).
-      # Install the Android SDK *before* running Gradle against this repo.
+      # AGP configures :app during Gradle configuration — SDK must exist first.
       - name: Android SDK
         uses: android-actions/setup-android@v3
 
@@ -43,24 +42,11 @@ jobs:
           fi
           echo "sdk.dir=${SDK}" > local.properties
 
-      # This repo only had gradle-wrapper.properties; bootstrap full wrapper (gradlew + jar).
-      - name: Bootstrap Gradle wrapper
-        shell: bash
-        run: |
-          set -euo pipefail
-          GRADLE_VERSION=8.9
-          curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "/tmp/gradle.zip"
-          unzip -qo "/tmp/gradle.zip" -d "/tmp"
-          "/tmp/gradle-${GRADLE_VERSION}/bin/gradle" wrapper \
-            --gradle-version "${GRADLE_VERSION}" \
-            --distribution-type bin
-          chmod +x gradlew
-
       - name: Setup Gradle (cache)
         uses: gradle/actions/setup-gradle@v4
 
       - name: Assemble debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace --no-daemon
+        run: chmod +x ./gradlew && ./gradlew :app:assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
