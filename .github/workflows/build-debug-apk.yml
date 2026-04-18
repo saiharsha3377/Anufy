@@ -21,17 +21,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # AGP configures :app during Gradle configuration — SDK must exist first.
+      # v4 runs on Node 24 and can install SDK packages reliably (avoids PATH/cmdline-tools issues with v3).
       - name: Android SDK
-        uses: android-actions/setup-android@v3
-
-      # setup-android already accepts licenses by default; re-running `sdkmanager --licenses`
-      # in CI often exits non-zero and fails the whole job.
-      - name: Install compile SDK + build tools
-        shell: bash
-        run: |
-          set -euo pipefail
-          yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" >/dev/null
+        uses: android-actions/setup-android@v4.0.1
+        with:
+          packages: "tools platform-tools platforms;android-34 build-tools;34.0.0"
 
       - name: Point Gradle at the Android SDK
         shell: bash
@@ -51,6 +45,7 @@ jobs:
         run: chmod +x ./gradlew && ./gradlew :app:assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: aurora-music-debug
