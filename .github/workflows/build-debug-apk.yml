@@ -42,7 +42,22 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Assemble debug APK
-        run: chmod +x ./gradlew && ./gradlew :app:assembleDebug --no-daemon --stacktrace
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee assemble.log
+
+      - name: Upload CI diagnostics (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-diagnostics
+          if-no-files-found: ignore
+          path: |
+            assemble.log
+            app/build/reports
+            app/build/outputs
 
       - name: Upload APK
         if: success()
@@ -50,13 +65,3 @@ jobs:
         with:
           name: aurora-music-debug
           path: app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Upload Gradle reports (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: gradle-failure-reports
-          if-no-files-found: ignore
-          path: |
-            app/build/reports
-            app/build/outputs

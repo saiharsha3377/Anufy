@@ -39,7 +39,7 @@ import com.aurora.music.ui.player.LocalAuroraPlayer
 import com.aurora.music.ui.player.MiniPlayerBar
 import com.aurora.music.ui.player.NowPlayingScreen
 import com.aurora.music.ui.theme.AuroraTheme
-import com.google.common.util.concurrent.MoreExecutors
+import java.util.concurrent.Executor
 
 private fun Context.hasAudioReadPermission(): Boolean {
     val permission = if (Build.VERSION.SDK_INT >= 33) {
@@ -112,7 +112,7 @@ private fun AuroraRoot() {
                 }
             }
         }
-        future.addListener(listener, MoreExecutors.directExecutor())
+        future.addListener(listener, Executor { command -> command.run() })
 
         onDispose {
             try {
