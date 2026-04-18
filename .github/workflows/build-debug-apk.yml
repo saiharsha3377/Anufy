@@ -52,7 +52,10 @@ jobs:
             echo "## First Gradle errors"
             (grep -nE "What went wrong:|FAILURE:|> Task .*FAILED|e: file://" assemble.log || true) | head -n 40
           } >> "$GITHUB_STEP_SUMMARY"
-          LINE="$(grep -m1 -E "What went wrong:|FAILURE:|> Task :app:.*FAILED|e: file://" assemble.log || true)"
+          LINE="$(grep -m1 "e: file://" assemble.log || true)"
+          if [[ -z "${LINE}" ]]; then
+            LINE="$(grep -m1 -E "What went wrong:|FAILURE:|> Task :app:.*FAILED" assemble.log || true)"
+          fi
           if [[ -n "${LINE}" ]]; then
             echo "::error title=Gradle::${LINE:0:900}"
           fi
