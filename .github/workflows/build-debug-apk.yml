@@ -1,16 +1,9 @@
 name: Build debug APK
 
-# Runs on any branch push (not only main/master), PRs, and manual "Run workflow".
-# If nothing shows under Actions → Workflows, enable Actions in repo Settings → Actions → General.
 on:
   workflow_dispatch:
   push:
   pull_request:
-
-# Some accounts default GITHUB_TOKEN to read-only; artifact upload needs write.
-permissions:
-  contents: read
-  actions: write
 
 jobs:
   debug_apk:
@@ -25,11 +18,11 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # v4 runs on Node 24 and can install SDK packages reliably (avoids PATH/cmdline-tools issues with v3).
+      # Platform 35 for AndroidX; build-tools 34 is reliably installable everywhere.
       - name: Android SDK
         uses: android-actions/setup-android@v4.0.1
         with:
-          packages: "tools platform-tools platforms;android-34 build-tools;34.0.0"
+          packages: "tools platform-tools platforms;android-35 build-tools;34.0.0"
 
       - name: Point Gradle at the Android SDK
         shell: bash
@@ -42,11 +35,10 @@ jobs:
           fi
           echo "sdk.dir=${SDK}" > local.properties
 
-      - name: Setup Gradle (cache)
-        uses: gradle/actions/setup-gradle@v4
-
       - name: Assemble debug APK
         shell: bash
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=false"
         run: |
           set -euo pipefail
           chmod +x ./gradlew
