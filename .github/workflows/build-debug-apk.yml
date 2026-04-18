@@ -7,8 +7,10 @@ on:
   push:
   pull_request:
 
+# Some accounts default GITHUB_TOKEN to read-only; artifact upload needs write.
 permissions:
   contents: read
+  actions: write
 
 jobs:
   debug_apk:
