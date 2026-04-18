@@ -29,7 +29,9 @@ jobs:
           yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" >/dev/null
 
       - name: Point Gradle at the Android SDK
-        run: echo "sdk.dir=${ANDROID_SDK_ROOT}" > local.properties
+        run: |
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "sdk.dir=${SDK}" > local.properties
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
