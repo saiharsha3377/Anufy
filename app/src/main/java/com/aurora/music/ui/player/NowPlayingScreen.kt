@@ -17,7 +17,6 @@ import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.outlined.Shuffle
@@ -224,17 +223,17 @@ fun NowPlayingScreen(
                 }
 
                 IconButton(onClick = { auroraPlayer.cycleRepeatMode() }) {
-                    val icon = if (snapshot.repeatMode == Player.REPEAT_MODE_ONE) {
-                        Icons.Filled.RepeatOne
-                    } else {
-                        Icons.Filled.Repeat
-                    }
                     val tint = if (snapshot.repeatMode == Player.REPEAT_MODE_OFF) {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     } else {
                         MaterialTheme.colorScheme.primary
                     }
-                    Icon(icon, contentDescription = "Repeat", tint = tint)
+                    val desc = when (snapshot.repeatMode) {
+                        Player.REPEAT_MODE_ONE -> "Repeat one"
+                        Player.REPEAT_MODE_ALL -> "Repeat all"
+                        else -> "Repeat off"
+                    }
+                    Icon(Icons.Filled.Repeat, contentDescription = desc, tint = tint)
                 }
             }
 

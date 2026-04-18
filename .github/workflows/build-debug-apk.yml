@@ -18,11 +18,10 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # Platform 35 for AndroidX; build-tools 34 is reliably installable everywhere.
       - name: Android SDK
         uses: android-actions/setup-android@v4.0.1
         with:
-          packages: "tools platform-tools platforms;android-35 build-tools;34.0.0"
+          packages: "tools platform-tools platforms;android-34 build-tools;34.0.0"
 
       - name: Point Gradle at the Android SDK
         shell: bash
@@ -54,6 +53,18 @@ jobs:
             assemble.log
             app/build/reports
             app/build/outputs
+
+      - name: Surface Gradle errors in job summary
+        if: failure()
+        shell: bash
+        run: |
+          {
+            echo "## Gradle output (tail)"
+            echo ""
+            echo '```text'
+            tail -n 120 assemble.log 2>/dev/null || echo "(no assemble.log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload APK
         if: success()
