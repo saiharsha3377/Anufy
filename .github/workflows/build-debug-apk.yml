@@ -25,11 +25,12 @@ jobs:
       - name: Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Accept SDK licenses + install compile SDK
+      # setup-android already accepts licenses by default; re-running `sdkmanager --licenses`
+      # in CI often exits non-zero and fails the whole job.
+      - name: Install compile SDK + build tools
         shell: bash
         run: |
           set -euo pipefail
-          yes | sdkmanager --licenses >/dev/null
           yes | sdkmanager "platforms;android-35" "build-tools;35.0.0" >/dev/null
 
       - name: Point Gradle at the Android SDK
