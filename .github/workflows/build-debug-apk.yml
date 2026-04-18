@@ -1,13 +1,19 @@
 name: Build debug APK
 
+# Only `main` pushes + manual runs = faster CI (no duplicate PR + push jobs).
 on:
   workflow_dispatch:
   push:
-  pull_request:
+    branches: [main]
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   debug_apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,47 +27,45 @@ jobs:
       - name: Android SDK
         uses: android-actions/setup-android@v4.0.1
         with:
-          packages: "tools platform-tools platforms;android-34 build-tools;34.0.0"
+          packages: "tools platform-tools platforms;android-35 build-tools;35.0.0"
 
       - name: Point Gradle at the Android SDK
         shell: bash
         run: |
           set -euo pipefail
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
-          if [[ -z "${SDK}" ]]; then
-            echo "ANDROID_SDK_ROOT / ANDROID_HOME is empty" >&2
-            exit 1
-          fi
           echo "sdk.dir=${SDK}" > local.properties
+
+      - name: Setup Gradle (dependency + wrapper cache)
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Assemble debug APK
         shell: bash
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=false"
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew :app:assembleDebug --no-daemon --stacktrace 2>&1 | tee assemble.log
+          ./gradlew :app:assembleDebug --stacktrace --build-cache 2>&1 | tee assemble.log
 
-      - name: Expose first Gradle error (for API annotations)
+      - name: Report failure snippet
         if: failure()
         shell: bash
         run: |
-          set +e
           {
-            echo "## First Gradle errors"
-            (grep -nE "What went wrong:|FAILURE:|> Task .*FAILED|e: file://" assemble.log || true) | head -n 40
+            echo "## Gradle (tail)"
+            echo '```text'
+            tail -n 80 assemble.log 2>/dev/null || true
+            echo '```'
+            LINE="$(grep -m1 "e: file://" assemble.log || true)"
+            if [[ -z "${LINE}" ]]; then
+              LINE="$(grep -m1 -E "> Task :app:.*FAILED" assemble.log || true)"
+            fi
+            if [[ -n "${LINE}" ]]; then
+              echo "::error::${LINE:0:900}"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
-          LINE="$(grep -m1 "e: file://" assemble.log || true)"
-          if [[ -z "${LINE}" ]]; then
-            LINE="$(grep -m1 -E "What went wrong:|FAILURE:|> Task :app:.*FAILED" assemble.log || true)"
-          fi
-          if [[ -n "${LINE}" ]]; then
-            echo "::error title=Gradle::${LINE:0:900}"
-          fi
 
-      - name: Upload CI diagnostics (always)
-        if: always()
+      - name: Upload CI diagnostics
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: ci-diagnostics
@@ -69,19 +73,6 @@ jobs:
           path: |
             assemble.log
             app/build/reports
-            app/build/outputs
-
-      - name: Surface Gradle errors in job summary
-        if: failure()
-        shell: bash
-        run: |
-          {
-            echo "## Gradle output (tail)"
-            echo ""
-            echo '```text'
-            tail -n 120 assemble.log 2>/dev/null || echo "(no assemble.log)"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload APK
         if: success()
