@@ -102,7 +102,9 @@ private fun AuroraRoot() {
         future.addListener(
             Runnable {
                 try {
-                    auroraPlayer = AuroraPlayer(future.get())
+                    @Suppress("UNCHECKED_CAST")
+                    val controller = future.get() as MediaController
+                    auroraPlayer = AuroraPlayer(controller)
                 } catch (_: Exception) {
                     auroraPlayer = AuroraPlayer(null)
                 }
@@ -113,7 +115,8 @@ private fun AuroraRoot() {
         onDispose {
             try {
                 if (future.isDone) {
-                    future.get().release()
+                    @Suppress("UNCHECKED_CAST")
+                    (future.get() as? MediaController)?.release()
                 } else {
                     future.cancel(true)
                 }
