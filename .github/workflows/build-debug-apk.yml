@@ -27,7 +27,7 @@ jobs:
       - name: Android SDK
         uses: android-actions/setup-android@v4.0.1
         with:
-          packages: "tools platform-tools platforms;android-35 build-tools;35.0.0"
+          packages: "tools platform-tools platforms;android-34 build-tools;34.0.0"
 
       - name: Point Gradle at the Android SDK
         shell: bash
@@ -44,12 +44,16 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          if ! ./gradlew :app:assembleDebug --stacktrace --build-cache 2>&1 | tee assemble.log; then
+          set +e
+          ./gradlew :app:assembleDebug --stacktrace --build-cache 2>&1 | tee assemble.log
+          GRADLE_EXIT=${PIPESTATUS[0]}
+          set -e
+          if [[ "${GRADLE_EXIT}" -ne 0 ]]; then
             echo "::group::Gradle failure excerpt"
             grep -E "FAILED|What went wrong|> Task :app:|e: file://|error:|Unresolved" assemble.log | tail -n 80 || true
             tail -n 60 assemble.log || true
             echo "::endgroup::"
-            exit 1
+            exit "${GRADLE_EXIT}"
           fi
 
       - name: Report failure snippet

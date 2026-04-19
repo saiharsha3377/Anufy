@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -108,7 +108,7 @@ fun LibraryScreen(
                         }
                     },
                 )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
+                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
             }
         }
     }
