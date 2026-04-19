@@ -18,7 +18,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     var query by mutableStateOf("")
         private set
 
-    fun setQuery(value: String) {
+    fun updateQuery(value: String) {
         query = value
     }
 

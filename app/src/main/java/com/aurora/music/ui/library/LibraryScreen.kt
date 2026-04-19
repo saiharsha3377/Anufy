@@ -76,7 +76,7 @@ fun LibraryScreen(
 
         OutlinedTextField(
             value = viewModel.query,
-            onValueChange = viewModel::setQuery,
+            onValueChange = viewModel::updateQuery,
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
