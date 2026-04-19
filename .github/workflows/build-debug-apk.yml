@@ -44,7 +44,13 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew :app:assembleDebug --stacktrace --build-cache 2>&1 | tee assemble.log
+          if ! ./gradlew :app:assembleDebug --stacktrace --build-cache 2>&1 | tee assemble.log; then
+            echo "::group::Gradle failure excerpt"
+            grep -E "FAILED|What went wrong|> Task :app:|e: file://|error:|Unresolved" assemble.log | tail -n 80 || true
+            tail -n 60 assemble.log || true
+            echo "::endgroup::"
+            exit 1
+          fi
 
       - name: Report failure snippet
         if: failure()

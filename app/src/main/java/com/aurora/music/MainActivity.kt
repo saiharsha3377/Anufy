@@ -100,10 +100,9 @@ private fun AuroraRoot() {
         val mainExecutor = ContextCompat.getMainExecutor(activity)
         val future = MediaController.Builder(activity, sessionToken).buildAsync()
         future.addListener(
-            {
+            Runnable {
                 try {
-                    val controller = future.get()
-                    auroraPlayer = AuroraPlayer(controller)
+                    auroraPlayer = AuroraPlayer(future.get())
                 } catch (_: Exception) {
                     auroraPlayer = AuroraPlayer(null)
                 }

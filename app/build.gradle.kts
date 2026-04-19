@@ -43,11 +43,13 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
-        // Media3 ships native libs; avoid :stripDebugDebugSymbols requiring a full NDK install on CI.
-        jniLibs {
-            keepDebugSymbols += "**/*.so"
-        }
     }
+}
+
+// Media3 pulls JNI libs; CI runners often have no NDK. Stripping is optional for debug APKs.
+afterEvaluate {
+    tasks.matching { it.name.contains("stripDebugDebugSymbols", ignoreCase = true) }
+        .configureEach { enabled = false }
 }
 
 dependencies {
