@@ -36,6 +36,9 @@ jobs:
           SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
           echo "sdk.dir=${SDK}" > local.properties
 
+      - name: Setup Gradle (cache)
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Assemble debug APK
         shell: bash
         env:
@@ -44,7 +47,7 @@ jobs:
           set -euo pipefail
           chmod +x ./gradlew
           set +e
-          ./gradlew :app:assembleDebug --stacktrace --no-build-cache 2>&1 | tee assemble.log
+          ./gradlew :app:assembleDebug --stacktrace --build-cache 2>&1 | tee assemble.log
           GRADLE_EXIT=${PIPESTATUS[0]}
           set -e
           if [[ "${GRADLE_EXIT}" -ne 0 ]]; then
@@ -55,28 +58,12 @@ jobs:
             exit "${GRADLE_EXIT}"
           fi
 
-      - name: Publish full assemble.log (paste.rs)
-        if: failure()
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f assemble.log ]]; then
-            PASTE_URL="$(curl -fsS --data-binary @assemble.log https://paste.rs || true)"
-            if [[ -n "${PASTE_URL}" ]]; then
-              echo "::notice::assemble.log -> ${PASTE_URL}"
-              echo "PASTE_URL=${PASTE_URL}" >> "$GITHUB_ENV"
-            fi
-          fi
-
       - name: Report failure snippet
         if: failure()
         shell: bash
         run: |
           {
             echo "## Gradle (errors / tail)"
-            if [[ -n "${PASTE_URL:-}" ]]; then
-              echo "Full log: ${PASTE_URL}"
-            fi
             echo '```text'
             grep -E "FAILED|What went wrong|> Task :app:|e: file://|error:|Unresolved" assemble.log 2>/dev/null | tail -n 60 || true
             echo "--- tail ---"
