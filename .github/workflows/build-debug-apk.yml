@@ -51,13 +51,15 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Gradle (tail)"
+            echo "## Gradle (errors / tail)"
             echo '```text'
-            tail -n 80 assemble.log 2>/dev/null || true
+            grep -E "FAILED|What went wrong|> Task :app:|e: file://|error:|Unresolved" assemble.log 2>/dev/null | tail -n 60 || true
+            echo "--- tail ---"
+            tail -n 40 assemble.log 2>/dev/null || true
             echo '```'
             LINE="$(grep -m1 "e: file://" assemble.log || true)"
             if [[ -z "${LINE}" ]]; then
-              LINE="$(grep -m1 -E "> Task :app:.*FAILED" assemble.log || true)"
+              LINE="$(grep -m1 -E "> Task :app:.*FAILED|What went wrong:" assemble.log || true)"
             fi
             if [[ -n "${LINE}" ]]; then
               echo "::error::${LINE:0:900}"

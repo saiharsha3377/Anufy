@@ -39,7 +39,6 @@ import com.aurora.music.ui.player.LocalAuroraPlayer
 import com.aurora.music.ui.player.MiniPlayerBar
 import com.aurora.music.ui.player.NowPlayingScreen
 import com.aurora.music.ui.theme.AuroraTheme
-import java.util.concurrent.Executor
 
 private fun Context.hasAudioReadPermission(): Boolean {
     val permission = if (Build.VERSION.SDK_INT >= 33) {
@@ -100,19 +99,17 @@ private fun AuroraRoot() {
         )
         val mainExecutor = ContextCompat.getMainExecutor(activity)
         val future = MediaController.Builder(activity, sessionToken).buildAsync()
-        val listener = Runnable {
-            try {
-                val controller = future.get()
-                mainExecutor.execute {
+        future.addListener(
+            {
+                try {
+                    val controller = future.get()
                     auroraPlayer = AuroraPlayer(controller)
-                }
-            } catch (_: Exception) {
-                mainExecutor.execute {
+                } catch (_: Exception) {
                     auroraPlayer = AuroraPlayer(null)
                 }
-            }
-        }
-        future.addListener(listener, Executor { command -> command.run() })
+            },
+            mainExecutor,
+        )
 
         onDispose {
             try {
